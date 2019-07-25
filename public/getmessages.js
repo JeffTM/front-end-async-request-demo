@@ -1,27 +1,29 @@
 "use strict";
 
 function getMessages() {
-    let messageRequest = new XMLHttpRequest();
-    messageRequest.onreadystatechange = () => {
-        if (messageRequest.readyState == 4 && messageRequest.status == 200) {
-            let messages = JSON.parse(messageRequest.responseText);
-            messages = messages.map((val, index, arr) => val.message);
-            console.log(messages);
+    let messagePromise = fetch("messages");
+    messagePromise
+        .then(response => response.json()) //Need to handle HTTP errors as they don't result in a rejection
+        .then(jsonArray => jsonArray.map(x => x.message))
+        .then(displayMessages)
+        .catch(error => displayMessageLoadError());
+}
 
-            let messageList = document.createElement("ul");
-            for (let message of messages) {
-                let messageListItem = document.createElement("li");
-                messageListItem.textContent = message;
-                messageList.appendChild(messageListItem);
-            }
-
-            let messagesDiv = document.getElementById("messages");
-            removeAllChildren(messagesDiv);
-            messagesDiv.appendChild(messageList);
-        }
+function displayMessages(messages) {
+    let messageList = document.createElement("ul");
+    for (let message of messages) {
+        let messageListItem = document.createElement("li");
+        messageListItem.textContent = message;
+        messageList.appendChild(messageListItem);
     }
-    messageRequest.open("GET", "messages", true);
-    messageRequest.send();  
+
+    let messagesDiv = document.getElementById("messages");
+    removeAllChildren(messagesDiv);
+    messagesDiv.appendChild(messageList);
+}
+
+function displayMessageLoadError() {
+    document.getElementById("messages").textContent = "Failed to load messages";
 }
 
 function removeAllChildren(node) {
